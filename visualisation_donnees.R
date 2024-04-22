@@ -105,4 +105,102 @@ ggplot(as.data.frame(table(tabletnrl_clean$espece_sup, tabletnrl_clean$espece_ge
   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
   scale_fill_discrete(name = "Espèces séquencées") 
 
+###Etat de fraicheur vs occurence###
+ggplot(tabletnrl_clean, aes(x = fraicheur, y = occurrence_cibles, fill = espece_gen)) +
+  geom_bar(stat = "identity") +
+  scale_y_log10() +
+  labs(x = "État de fraîcheur", y = "Nombre d'occurrences (échelle logarithmique)", title = "Nombre d'occurrences par espèces et par état de fraîcheur") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(hjust = 1)) +
+  scale_fill_discrete(name = "Espèces")
+
+###Collecteur vs occurence###
+#regrouper les collecteur "agéris" vs les "non ageris", demander à Anne
+ggplot(tabletnrl_clean, aes(x = observateur, y = occurrence_cibles, fill = espece_gen)) +
+  geom_bar(stat = "identity") +
+  scale_y_log10() +
+  labs(x = "État de fraîcheur", y = "Nombre d'occurrences (échelle logarithmique)", title = "Nombre d'occurrences par espèces et par état de fraîcheur") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(hjust = 1)) +
+  scale_fill_discrete(name = "Espèces")
+
+###Puissance sequençage/famille de plantes/amorces###
+families <- assignation_nom_niveau[assignation_nom_niveau[, 1] == "family", "nom"]
+data <- as.data.frame(tableaste_clean[, colnames(tableaste_clean) %in% families], tableaste_clean$espece_gen)
+
+ggplot(data, aes(x = tableaste_clean$espece_gen, y = Asteraceae)) +
+  geom_boxplot(aes(fill = tableaste_clean$espece_gen), color = "black", size = 1) +
+  geom_jitter(color = "black", size = 2, alpha = 0.5) +
+  theme_bw() +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(size = 10)
+  ) +
+  ggtitle("Asteracea") +
+  xlab("Espèces") +
+  ylab("Occurence")
+
+
+###Vaccinium###
+#trnl
+# Selectionne les colonumes avec Vaccinium
+vaccinium <- tabletnrl_clean %>%
+  select(espece_gen, `Vaccinium gaultherioides`, `Vaccinium ovalifolium`, `Vaccinium uliginosum`, Vaccinium)
+# Création d'une nouvelle colonne "Vaccinium" contenant la somme des colonnes 2, 3 et 4
+vaccinium$Vaccinium <- rowSums(vaccinium[, 2:4])
+vaccinium <- vaccinium[, c(1, 5)]
+
+ggplot(as.data.frame(vaccinium), aes(x = espece_gen, y = Vaccinium)) +
+  geom_boxplot(aes(fill = espece_gen), color = "black", size = 1) +
+  geom_jitter(color = "black", size = 2, alpha = 0.5) +
+  theme_bw() +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(size = 10)
+  ) +
+  ggtitle("Vaccinium sp (trnl)") +
+  xlab("Espèces") +
+  ylab("Occurence")
+
+#Aste
+# Selectionne les colonumes avec Vaccinium
+vaccinium1 <- tableaste_clean %>%
+  select(espece_gen, `Vaccinium vitis-idaea`, Vaccinium)
+# Création d'une nouvelle colonne "Vaccinium" contenant la somme des colonnes 2, 3 et 4
+vaccinium1$Vaccinium <- rowSums(vaccinium1[, 2:3])
+vaccinium1 <- vaccinium1[, c(1, 3)]
+
+ggplot(as.data.frame(vaccinium1), aes(x = espece_gen, y = Vaccinium)) +
+  geom_boxplot(aes(fill = espece_gen), color = "black", size = 1) +
+  geom_jitter(color = "black", size = 2, alpha = 0.5) +
+  theme_bw() +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(size = 10)
+  ) +
+  ggtitle("Vaccinium sp (Aste)") +
+  xlab("Espèces") +
+  ylab("Occurence")
+
+#Cype
+# Selectionne les colonumes avec Vaccinium
+vaccinium2 <- tablecype_clean %>%
+  select(espece_gen, Vaccinium)
+# Création d'une nouvelle colonne "Vaccinium" contenant la somme des colonnes 2, 3 et 4
+vaccinium2$Vaccinium <- rowSums(vaccinium1[, 2])
+vaccinium2 <- vaccinium1[, c(1, 3)]
+
+ggplot(as.data.frame(vaccinium2), aes(x = espece_gen, y = Vaccinium)) +
+  geom_boxplot(aes(fill = espece_gen), color = "black", size = 1) +
+  geom_jitter(color = "black", size = 2, alpha = 0.5) +
+  theme_bw() +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(size = 10)
+  ) +
+  ggtitle("Vaccinium sp (Cype)") +
+  xlab("Espèces") +
+  ylab("Occurence")
+
+###Espèces suavages vs espèces sequencées###
 
