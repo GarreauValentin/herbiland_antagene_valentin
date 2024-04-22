@@ -31,6 +31,9 @@ for (j in 1:dim(table12s)[1]) {
 table12s[table12s$massif == "belledonne",]$conservation <- "silicagel"
 table12s[table12s$massif == "belledonne",]$fraicheur <- "oui"
 table12s[table12s$conservation == "Alcool 90 denaturee",]$conservation <- "denature"
+table12s$fraicheur[table12s$fraicheur == "frais" & !is.na(table12s$fraicheur)] <- "oui"
+table12s[table12s$massif == "belledonne",]$altitude <- "2030"
+
 
 write.csv(file = "output/12s_table.csv", table12s)
 
@@ -77,6 +80,9 @@ for (i in 1:length(fichier_list)) {
   df[df$massif == "belledonne",]$conservation <- "silicagel"
   df[df$massif == "belledonne",]$fraicheur <- "oui"
   df[df$conservation == "Alcool 90 denaturee",]$conservation <- "denature"
+  df$fraicheur[df$fraicheur == "frais" & !is.na(df$fraicheur)] <- "oui"
+  df[df$massif == "belledonne",]$altitude <- "2030"
+  
   
   assign(paste0(base_nom[i], "_table"), df)
   assign(paste0(base_nom[i], "_niveau"), fichier_niveaux)
@@ -88,4 +94,32 @@ for (i in 1:length(fichier_list)) {
 assignation_nom_niveau <- rbind(tnrl_niveau, poac_niveau, aste_niveau, cype_niveau)  
 assignation_nom_niveau <- assignation_nom_niveau %>% dplyr::distinct(niveau, nom)
 write.csv(file = "output/assignation_nom_niveau.csv", assignation_nom_niveau)
+
+###Feuille 3###
+#chargement des données taxonomie occurence
+taxotrnl <- read_xlsx("data/02_F0764_CREA_MontBlanc_Ongulés_resultats_trnL/F0764-CREA_Regime_Ongules-trnL-plq01et02_Metadata_seuil_100-100-100.xlsx", sheet = "Taxonomie_Occurrences seuil")
+taxocype <- read_xlsx("data/04_F0764_CREA_MontBlanc_Ongulés_resultats_Cype/F0764-CREA_Regime_Ongules-Cype-plq01et02_Metadata_seuil_100-100-100.xlsx", sheet = "Taxonomie_Occurrences seuil")
+taxoaste <- read_xlsx("data/03_F0764_CREA_MontBlanc_Ongulés_resultats_Aste/F0764-CREA_Regime_Ongules-Aste-plq01et02_Metadata_seuil_bruts.xlsx", sheet = "Taxonomie_Occurrences")
+taxopoac <- read_xlsx("data/05_F0764_CREA_MontBlanc_Ongulés_resultats_Poac/F0764-CREA_Regime_Ongules-Poac-plq01et02_Metadata_seuil_100-100-100.xlsx", sheet = "Taxonomie_Occurrences seuil")
+
+### Formattage tables tnrl, aste, cype et poac 
+# Remplacements noms de colonnes communes a tous les fichiers
+fichier_list <- list(taxotrnl,
+                     taxocype,
+                     taxopoac,
+                     taxoaste)
+
+base_nom <- c("tnrl",
+              "cype",
+              "poac",
+              "aste")
+
+for (i in 1:length(fichier_list)) {
+  df3 <- fichier_list[[i]]
+  
+  colnames(df3)[c(1:14)] <- c("base", "poucentage_identité", "domaine", "sous_regne", "infra-regne", "classe", "famille", 
+                             "genre", "espece", "rang", "nom_scientifique", "liste_espece", "total" )
+  colnames(df3)[c(15:dim(df)[2])] <- df[2,c(15:dim(df)[2])]
+  df3 <- df3[-c(1:2),]
+}
 
