@@ -36,7 +36,8 @@ table12s[table12s$massif == "belledonne",]$altitude <- "2030"
 
 write.csv(file = "output/12s_table.csv", table12s)
 #création de fichier doublons
-table12s <- table12s[table12s$N_Antagene %in% doublons$N_Antagene, ]
+table12s <- merge(table12s, doublons[, c("N_Antagene", "doublons")], by = "N_Antagene", all.x = TRUE)
+table12s <- subset(table12s, !is.na(doublons))
 write.csv(file = paste0("output/12s_doublons.csv"), table12s)
 
 ### Formattage tables tnrl, aste, cype et poac 
@@ -96,10 +97,10 @@ for (i in 1:length(fichier_list)) {
 assignation_nom_niveau <- rbind(tnrl_niveau, poac_niveau, aste_niveau, cype_niveau)  
 assignation_nom_niveau <- assignation_nom_niveau %>% dplyr::distinct(niveau, nom)
 write.csv(file = "output/assignation_nom_niveau.csv", assignation_nom_niveau)
-#création doublons
+# Création des fichiers de doublons
 for (i in 1:length(fichier_list)) {
-  df <- df[df$N_Antagene %in% doublons$N_Antagene, ]
-  df$doublons <- doublons[doublons$N_Antagene %in% df$N_Antagene, ]$doublons
+  df <- merge(df, doublons[, c("N_Antagene", "doublons")], by = "N_Antagene", all.x = TRUE)
+  df <- subset(df, !is.na(doublons))
   assign(paste0(base_nom[i]), df)
   write.csv(file = paste0("output/", base_nom[i], "_doublons.csv"), df)
 }
@@ -117,7 +118,7 @@ fichier_list2 <- list(taxotrnl,
                      taxocype,
                      taxopoac,
                      taxoaste,
-                     taxo12S)
+                     taxo12s)
 base_nom <- c("tnrl",
               "cype",
               "poac",
