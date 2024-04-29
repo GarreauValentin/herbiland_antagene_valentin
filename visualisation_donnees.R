@@ -193,8 +193,12 @@ vaccinium <- tabletnrl_clean %>%
 # Création d'une nouvelle colonne "Vaccinium" contenant la somme des colonnes 2, 3 et 4
 vaccinium$Vaccinium <- rowSums(vaccinium[, 2:4])
 vaccinium <- vaccinium[, c(1, 5)]
+#outliers
+boxplot.stats(vaccinium$Vaccinium)$out
+which(vaccinium$Vaccinium %in% c(boxplot.stats(vaccinium$Vaccinium)$out))
+vaccinium_clean <- vaccinium[!(vaccinium$Vaccinium %in% boxplot.stats(vaccinium$Vaccinium)$out), ]
 
-ggplot(as.data.frame(vaccinium), aes(x = espece_gen, y = Vaccinium)) +
+ggplot(as.data.frame(vaccinium_clean), aes(x = espece_gen, y = Vaccinium)) +
   geom_boxplot(aes(fill = espece_gen), color = "black", size = 1) +
   geom_jitter(color = "black", size = 2, alpha = 0.5) +
   theme_bw() +
@@ -206,6 +210,9 @@ ggplot(as.data.frame(vaccinium), aes(x = espece_gen, y = Vaccinium)) +
   xlab("Espèces") +
   ylab("Occurence")+
   scale_y_log10()
+#visualiser les effets différement 
+vaccinium_clean$espece_gen <- as.factor(vaccinium_clean$espece_gen)
+plot.design(Vaccinium ~ espece_gen, data = vaccinium_clean, ylab = "mean of occurence")
 
 #Aste
 # Selectionne les colonumes avec Vaccinium
@@ -214,6 +221,10 @@ vaccinium1 <- tableaste_clean %>%
 # Création d'une nouvelle colonne "Vaccinium" contenant la somme des colonnes 2, 3 et 4
 vaccinium1$Vaccinium <- rowSums(vaccinium1[, 2:3])
 vaccinium1 <- vaccinium1[, c(1, 3)]
+#outliers
+boxplot.stats(vaccinium1$Vaccinium)$out
+which(vaccinium1$Vaccinium %in% c(boxplot.stats(vaccinium1$Vaccinium)$out))
+vaccinium_clean1 <- vaccinium1[!(vaccinium1$Vaccinium %in% boxplot.stats(vaccinium1$Vaccinium)$out), ]
 
 ggplot(as.data.frame(vaccinium1), aes(x = espece_gen, y = Vaccinium)) +
   geom_boxplot(aes(fill = espece_gen), color = "black", size = 1) +
@@ -235,8 +246,12 @@ vaccinium2 <- tablecype_clean %>%
 # Création d'une nouvelle colonne "Vaccinium" contenant la somme des colonnes 2, 3 et 4
 vaccinium2$Vaccinium <- rowSums(vaccinium1[, 2])
 vaccinium2 <- vaccinium1[, c(1, 3)]
+#outliers
+boxplot.stats(vaccinium2$Vaccinium)$out
+which(vaccinium2$Vaccinium %in% c(boxplot.stats(vaccinium2$Vaccinium)$out))
+vaccinium_clean2 <- vaccinium2[!(vaccinium2$Vaccinium %in% boxplot.stats(vaccinium2$Vaccinium)$out), ]
 
-ggplot(as.data.frame(vaccinium2), aes(x = espece_gen, y = Vaccinium)) +
+ggplot(as.data.frame(vaccinium_clean2), aes(x = espece_gen, y = Vaccinium)) +
   geom_boxplot(aes(fill = espece_gen), color = "black", size = 1) +
   geom_jitter(color = "black", size = 2, alpha = 0.5) +
   theme_bw() +
@@ -325,61 +340,73 @@ especepoac <- filter(taxontablepoac, grepl("species", rang))
 #famille - tnrl
 ggplot(data.frame(familytnrl), aes(x = nom_scientifique, y = cerf)) +
   geom_col() +
+  coord_cartesian(ylim = c(0, 25000)) +
   labs(x = "Familles plantes consommées", y = "Nombre d'occurrences", title = "Cerf (tnrl)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #genre - tnrl
 ggplot(data.frame(genretnrl), aes(x = nom_scientifique, y = cerf)) +
   geom_col() +
+  coord_cartesian(ylim = c(0, 25000)) +
   labs(x = "Genres plantes consommées", y = "Nombre d'occurrences", title = "Cerf (tnrl)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #espèces - tnrl
 ggplot(data.frame(especetnrl), aes(x = nom_scientifique, y = cerf)) +
   geom_col() +
+  coord_cartesian(ylim = c(0, 25000)) +
   labs(x = "Espèces plantes consommées", y = "Nombre d'occurrences", title = "Cerf (tnrl)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #famille - Aste
 ggplot(data.frame(familyaste), aes(x = nom_scientifique, y = cerf)) +
   geom_col() +
+  coord_cartesian(ylim = c(0, 25000)) +
   labs(x = "Familles plantes consommées", y = "Nombre d'occurrences", title = "Cerf (Aste)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #genre - Aste
 ggplot(data.frame(genreaste), aes(x = nom_scientifique, y = cerf)) +
   geom_col() +
+  coord_cartesian(ylim = c(0, 25000)) +
   labs(x = "Genres plantes consommées", y = "Nombre d'occurrences", title = "Cerf (Aste)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #espèce - Aste
 ggplot(data.frame(especeaste), aes(x = nom_scientifique, y = cerf)) +
   geom_col() +
+  coord_cartesian(ylim = c(0, 25000)) +
   labs(x = "Espèces plantes consommées", y = "Nombre d'occurrences", title = "Cerf (Aste)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #famille - Cype
 ggplot(data.frame(familycype), aes(x = nom_scientifique, y = cerf)) +
   geom_col() +
+  coord_cartesian(ylim = c(0, 25000)) +
   labs(x = "Familles plantes consommées", y = "Nombre d'occurrences", title = "Cerf (Cype)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #genre - Cype
 ggplot(data.frame(genrecype), aes(x = nom_scientifique, y = cerf)) +
   geom_col() +
+  coord_cartesian(ylim = c(0, 25000)) +
   labs(x = "Genres plantes consommées", y = "Nombre d'occurrences", title = "Cerf (Cype)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #espèce - Cype
 ggplot(data.frame(espececype), aes(x = nom_scientifique, y = cerf)) +
   geom_col() +
+  coord_cartesian(ylim = c(0, 25000)) +
   labs(x = "Espèces plantes consommées", y = "Nombre d'occurrences", title = "Cerf (Cype)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #famille - Poac
 ggplot(data.frame(familypoac), aes(x = nom_scientifique, y = cerf)) +
   geom_col() +
+  coord_cartesian(ylim = c(0, 25000)) +
   labs(x = "Familles plantes consommées", y = "Nombre d'occurrences", title = "Cerf (Poac)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #genre - Poac
 ggplot(data.frame(genrepoac), aes(x = nom_scientifique, y = cerf)) +
   geom_col() +
+  coord_cartesian(ylim = c(0, 25000)) +
   labs(x = "Genres plantes consommées", y = "Nombre d'occurrences", title = "Cerf (Poac)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #espèce - Poac
 ggplot(data.frame(especepoac), aes(x = nom_scientifique, y = cerf)) +
   geom_col() +
+  coord_cartesian(ylim = c(0, 25000)) +
   labs(x = "Espèces plantes consommées", y = "Nombre d'occurrences", title = "Cerf (Poac)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
@@ -387,65 +414,83 @@ ggplot(data.frame(especepoac), aes(x = nom_scientifique, y = cerf)) +
 #famille - tnrl
 ggplot(data.frame(familytnrl), aes(x = nom_scientifique, y = chamois)) +
   geom_col() +
+  coord_cartesian(ylim = c(0, 25000)) +
   labs(x = "Familles plantes consommées", y = "Nombre d'occurrences", title = "Chamois (tnrl)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #genre - tnrl
 ggplot(data.frame(genretnrl), aes(x = nom_scientifique, y = chamois)) +
   geom_col() +
+  coord_cartesian(ylim = c(0, 25000)) +
   labs(x = "Familles plantes consommées", y = "Nombre d'occurrences", title = "Chamois (tnrl)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #espèce - tnrl
 ggplot(data.frame(especetnrl), aes(x = nom_scientifique, y = chamois)) +
   geom_col() +
+  coord_cartesian(ylim = c(0, 25000)) +
   labs(x = "Espèces plantes consommées", y = "Nombre d'occurrences", title = "Chamois (tnrl)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #famille - Aste
 ggplot(data.frame(familyaste), aes(x = nom_scientifique, y = chamois)) +
   geom_col() +
+  coord_cartesian(ylim = c(0, 25000)) +
   labs(x = "Familles plantes consommées", y = "Nombre d'occurrences", title = "Chamois (Aste)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #genre - Aste
 ggplot(data.frame(genreaste), aes(x = nom_scientifique, y = chamois)) +
   geom_col() +
+  coord_cartesian(ylim = c(0, 25000)) +
   labs(x = "Genres plantes consommées", y = "Nombre d'occurrences", title = "Chamois (Aste)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #espèce - Aste
 ggplot(data.frame(especeaste), aes(x = nom_scientifique, y = chamois)) +
   geom_col() +
+  coord_cartesian(ylim = c(0, 25000)) +
   labs(x = "Espèces plantes consommées", y = "Nombre d'occurrences", title = "Chamois (Aste)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #famille - Cype
 ggplot(data.frame(familycype), aes(x = nom_scientifique, y = chamois)) +
   geom_col() +
+  coord_cartesian(ylim = c(0, 25000)) +
   labs(x = "Familles plantes consommées", y = "Nombre d'occurrences", title = "Chamois (Cype)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #genre - Cype
 ggplot(data.frame(genrecype), aes(x = nom_scientifique, y = chamois)) +
   geom_col() +
+  coord_cartesian(ylim = c(0, 25000)) +
   labs(x = "Genre plantes consommées", y = "Nombre d'occurrences", title = "Chamois (Cype)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #espèce - Cype
 ggplot(data.frame(espececype), aes(x = nom_scientifique, y = chamois)) +
   geom_col() +
+  coord_cartesian(ylim = c(0, 25000)) +
   labs(x = "Espèce plantes consommées", y = "Nombre d'occurrences", title = "Chamois (Cype)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #famille - Poac
 ggplot(data.frame(familypoac), aes(x = nom_scientifique, y = chamois)) +
   geom_col() +
+  coord_cartesian(ylim = c(0, 25000)) +
   labs(x = "Familles plantes consommées", y = "Nombre d'occurrences", title = "Chamois (Poac)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #genre - Poac
 ggplot(data.frame(genrepoac), aes(x = nom_scientifique, y = chamois)) +
   geom_col() +
+  coord_cartesian(ylim = c(0, 25000)) +
   labs(x = "Genre plantes consommées", y = "Nombre d'occurrences", title = "Chamois (Poac)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 #espèce - Poac
 ggplot(data.frame(especepoac), aes(x = nom_scientifique, y = chamois)) +
   geom_col() +
+  coord_cartesian(ylim = c(0, 25000)) +
   labs(x = "Espèce plantes consommées", y = "Nombre d'occurrences", title = "Chamois (Poac)") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 #HEAT MAP 
+ggplot(data.frame(especepoac, especetnrl), aes (x = nom_scientifique, y = chamois), fill = chamois) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "red")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
 ggplot(data.frame(familypoac)) +
   geom_tile(aes(y = nom_scientifique, x = chamois), fill = chamois, color = "black") +
   geom_tile(aes(y = nom_scientifique, x = cerf), fill = cerf, color = "black") +
@@ -454,12 +499,12 @@ ggplot(data.frame(familypoac)) +
   geom_tile(aes(y = nom_scientifique, x = bouquetin), fill = bouquetin, color = "black") +
   scale_fill_gradient(low = "white", high = "red")
 
-
-ggplot(familypoac_long, aes(x = animal, y = nom_scientifique, fill = valeur)) +
+ggplot(data.frame(especepoac), aes(x = nom_scientifique, y = cerf, fill = cerf)) +
   geom_tile(color = "black") +
   scale_fill_gradient(low = "white", high = "red") +
   labs(x = "Animal", y = "Nom scientifique", fill = "Valeur") +
-  ggtitle("Heatmap de familypoac")
+  ggtitle("Heatmap de familypoac") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ###TABLEAU RECP AMORCES/ESPECES###
 chamoistnrl <- filter(taxontabletnrl, chamois > 0)
@@ -482,6 +527,6 @@ for (i in seq_along(files)) {
   df3 <- df3[, c(col_name, "nom_scientifique")]
   df_name <- paste0(nom[i], "_", col_name, "_aliments")
   assign(df_name, df_filtered)
-  write.csv(file = paste0("output/", base_nom[i], "_table_taxon.csv"), df3)
+  write.csv(file = paste0("output/", nom[i], "_table_taxon.csv"), df3)
 }
 
