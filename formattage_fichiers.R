@@ -7,7 +7,7 @@ tabletrnl <- read_xlsx("data/02_F0764_CREA_MontBlanc_Ongulés_resultats_trnL/F0
 tablecype <- read_xlsx("data/04_F0764_CREA_MontBlanc_Ongulés_resultats_Cype/F0764-CREA_Regime_Ongules-Cype-plq01et02_Metadata_seuil_100-100-100.xlsx")
 tableaste <- read_xlsx("data/03_F0764_CREA_MontBlanc_Ongulés_resultats_Aste/F0764-CREA_Regime_Ongules-Aste-plq01et02_Metadata_seuil_100-100-100.xlsx")
 tablepoac <- read_xlsx("data/05_F0764_CREA_MontBlanc_Ongulés_resultats_Poac/F0764-CREA_Regime_Ongules-Poac-plq01et02_Metadata_seuil_100-100-100.xlsx")
-doublons <- read_xlsx("data/Doublons_crottes_total.xlsx", col_names = TRUE)
+tabledoublons <- read_xlsx("data/Doublons_crottes_total.xlsx", col_names = TRUE)
 
 ### Formattage table 12S - Identification espece 
 # Creation nouveaux noms de colonne
@@ -36,8 +36,8 @@ table12s[table12s$massif == "belledonne",]$altitude <- "2030"
 
 write.csv(file = "output/12s_table.csv", table12s)
 #création de fichier doublons
-table12s_doublons <- merge(table12s, doublons[, c("N_Antagene", "doublons")], by = "N_Antagene", all.x = TRUE)
-table12s_doublons <- subset(table12s, !is.na(doublons))
+table12s <- merge(table12s, tabledoublons[, c("N_Antagene", "doublons")], by = "N_Antagene", all.x = TRUE)
+table12s <- subset(table12s, !is.na(doublons))
 write.csv(file = paste0("output/12s_doublons.csv"), table12s)
 
 ### Formattage tables tnrl, aste, cype et poac 
@@ -99,10 +99,10 @@ assignation_nom_niveau <- assignation_nom_niveau %>% dplyr::distinct(niveau, nom
 write.csv(file = "output/assignation_nom_niveau.csv", assignation_nom_niveau)
 # Création des fichiers de doublons
 for (i in 1:length(fichier_list)) {
-  df <- merge(df, doublons[, c("N_Antagene", "doublons")], by = "N_Antagene", all.x = TRUE)
+  df <- merge(df, tabledoublons[, c("N_Antagene", "doublons")], by = "N_Antagene", all.x = TRUE)
   df <- subset(df, !is.na(doublons))
   assign(paste0(base_nom[i]), df)
-  write.csv(file = paste0("output/", base_nom[i], "_doublons.csv"), df)
+  write.csv(file = paste0("output/", base_nom[i], "_doublons.csv"), df, row.names=F)
 }
 
 ###Formattage feuille 3###
