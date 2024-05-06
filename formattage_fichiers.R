@@ -40,7 +40,7 @@ table12s <- merge(table12s, tabledoublons[, c("N_Antagene", "doublons")], by = "
 table12s <- subset(table12s, !is.na(doublons))
 write.csv(file = paste0("output/12s_doublons.csv"), table12s)
 
-### Formattage tables tnrl, aste, cype et poac 
+### Formattage tables trnl, aste, cype et poac 
 # Remplacements noms de colonnes communes a tous les fichiers
 
 fichier_list <- list(tabletrnl,
@@ -48,7 +48,7 @@ fichier_list <- list(tabletrnl,
                      tablepoac,
                      tableaste)
 
-base_nom <- c("tnrl",
+base_nom <- c("trnl",
               "cype",
               "poac",
               "aste")
@@ -94,7 +94,7 @@ for (i in 1:length(fichier_list)) {
 
 }  
 
-assignation_nom_niveau <- rbind(tnrl_niveau, poac_niveau, aste_niveau, cype_niveau)  
+assignation_nom_niveau <- rbind(trnl_niveau, poac_niveau, aste_niveau, cype_niveau)  
 assignation_nom_niveau <- assignation_nom_niveau %>% dplyr::distinct(niveau, nom)
 write.csv(file = "output/assignation_nom_niveau.csv", assignation_nom_niveau)
 # Création des fichiers de doublons
@@ -113,13 +113,13 @@ taxoaste <- read_xlsx("data/03_F0764_CREA_MontBlanc_Ongulés_resultats_Aste/F07
 taxopoac <- read_xlsx("data/05_F0764_CREA_MontBlanc_Ongulés_resultats_Poac/F0764-CREA_Regime_Ongules-Poac-plq01et02_Metadata_seuil_100-100-100.xlsx", sheet = "Taxonomie_Occurrences seuil")
 taxo12s <- read_xlsx("data/01_F0764_CREA_MontBlanc_Ongulés_resultats_12S/F0764-CREA_Regime_Ongules-12S-plq01et02_Metadata_seuil_100-100-100.xlsx", sheet = "Taxonomie_Occurrences seuil")
 
-### Formattage tables 12s, tnrl, aste, cype et poac 
+### Formattage tables 12s, trnl, aste, cype et poac 
 fichier_list2 <- list(taxotrnl,
                      taxocype,
                      taxopoac,
                      taxoaste,
                      taxo12s)
-base_nom <- c("tnrl",
+base_nom <- c("trnl",
               "cype",
               "poac",
               "aste",
@@ -140,3 +140,37 @@ for (i in 1:length(fichier_list2)) {
   write.csv(file = paste0("output/", base_nom[i], "_table_taxon.csv"), df2)
 }
 
+###Formattage feuille 5###
+#chargement des données taxonomie occurence
+trnl_freq <- read_xlsx("data/02_F0764_CREA_MontBlanc_Ongulés_resultats_trnL/F0764-CREA_Regime_Ongules-trnL-plq01et02_Metadata_seuil_100-100-100.xlsx", sheet = "Taxonomie_Abondance seuil")
+cype_freq <- read_xlsx("data/04_F0764_CREA_MontBlanc_Ongulés_resultats_Cype/F0764-CREA_Regime_Ongules-Cype-plq01et02_Metadata_seuil_100-100-100.xlsx", sheet = "Taxonomie_Abondance seuil")
+aste_freq <- read_xlsx("data/03_F0764_CREA_MontBlanc_Ongulés_resultats_Aste/F0764-CREA_Regime_Ongules-Aste-plq01et02_Metadata_seuil_100-100-100.xlsx", sheet = "Taxonomie_Abondance seuil")
+poac_freq <- read_xlsx("data/05_F0764_CREA_MontBlanc_Ongulés_resultats_Poac/F0764-CREA_Regime_Ongules-Poac-plq01et02_Metadata_seuil_100-100-100.xlsx", sheet = "Taxonomie_Abondance seuil")
+freq_12s <- read_xlsx("data/01_F0764_CREA_MontBlanc_Ongulés_resultats_12S/F0764-CREA_Regime_Ongules-12S-plq01et02_Metadata_seuil_100-100-100.xlsx", sheet = "Taxonomie_Abondance seuil")
+
+### Formattage tables 12s, trnl, aste, cype et poac 
+fichier_list3 <- list(trnl_freq,
+                      cype_freq,
+                      aste_freq,
+                      poac_freq,
+                      freq_12s)
+base_nom <- c("trnl",
+              "cype",
+              "poac",
+              "aste",
+              "12s")
+
+for (i in 1:length(fichier_list3)) {
+  df3 <- fichier_list3[[i]]
+  
+  colnames(df3)[c(1:21)] <- c("base", "meilleure_identité", "domaine", "sous_regne", 
+                              "infra-regne", "classe", "ordre", "famille", "genre", "espece", 
+                              "rang", "nom_scientifique", "liste_espece", "total", 
+                              "Non analysable", "bouquetin", "cerf", "chamois", 
+                              "chevreuil", "mouton", "vache" )
+  df3 <- df3[-c(1:2),]
+  
+  assign(paste0(base_nom[i], "_freq"), df3)
+  
+  write.csv(file = paste0("output/", base_nom[i], "_frequence.csv"), df3)
+}
