@@ -569,21 +569,22 @@ freqaste <- read.csv(file = "output/aste_frequence.csv", check.names = FALSE)
 freqcype <- read.csv(file = "output/cype_frequence.csv", check.names = FALSE)
 freqpoac <- read.csv(file = "output/poac_frequence.csv", check.names = FALSE)
 
+#Création tableaux
 trnl_freq <- tabletnrl_clean[, c(24:158, 2)]
 # Diviser chaque valeur des colonnes par la colonne "occurrence_cibles"
 trnl_freq[, 2:135] <- apply(trnl_freq[, 2:135], 1, function(x) x / trnl_freq$occurrence_cibles)
 trnl_freq <- aggregate(trnl_freq[, 1:135], by=list(trnl_freq$espece_gen), FUN=sum)
 names(trnl_freq)[names(trnl_freq) == "Group.1"] <- "espece_gen"
 trnl_freq <- trnl_freq[, !colnames(trnl_freq) %in% c("occurrence_cibles")]
-cols_to_pivot <- colnames(trnl_freq)[-1]
-trnl_freq_long <- tidyr::pivot_longer(trnl_freq, cols = cols_to_pivot, names_to = "Plantes", values_to = "Valeur")
+trnl_freq_long <- tidyr::pivot_longer(trnl_freq, cols = colnames(trnl_freq)[-1], names_to = "Plantes", values_to = "Valeur")
 trnl_freq_long <- merge(trnl_freq_long, freqtrnl$rang)
 
+#heatmap
 ggplot(trnl_freq_long, aes(x = Plantes, y = espece_gen, fill = Valeur)) +
   geom_tile() +
   scale_fill_gradient(low = "white", high = "red") +
   labs(x = "Plantes", y = "Espèce animal", fill = "Valeur") +
-  ggtitle("Heatmap de familypoac") +
+  ggtitle("Heatmap") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ggplot(data.frame(especepoac), aes(x = nom_scientifique, y = cerf, fill = cerf)) +
