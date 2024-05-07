@@ -222,7 +222,7 @@ which(vaccinium$Vaccinium %in% c(boxplot.stats(vaccinium$Vaccinium)$out))
 vaccinium_clean <- vaccinium[!(vaccinium$Vaccinium %in% boxplot.stats(vaccinium$Vaccinium)$out), ]
 
 pdf('graphes/graphe14.pdf')
-ggplot(as.data.frame(vaccinium_clean), aes(x = espece_gen, y = Vaccinium)) +
+ggplot(as.data.frame(vaccinium), aes(x = espece_gen, y = Vaccinium)) +
   geom_boxplot(aes(fill = espece_gen), color = "black", size = 1) +
   geom_jitter(color = "black", size = 2, alpha = 0.5) +
   theme_bw() +
@@ -568,24 +568,114 @@ freqtrnl <- read.csv(file = "output/trnl_frequence.csv", check.names = FALSE)
 freqaste <- read.csv(file = "output/aste_frequence.csv", check.names = FALSE)
 freqcype <- read.csv(file = "output/cype_frequence.csv", check.names = FALSE)
 freqpoac <- read.csv(file = "output/poac_frequence.csv", check.names = FALSE)
-
+###TRNL###
 #Création tableaux
 trnl_freq <- tabletnrl_clean[, c(24:158, 2)]
-# Diviser chaque valeur des colonnes par la colonne "occurrence_cibles"
+#supprimer les occurence_cible = 0
+trnl_freq <- trnl_freq %>% filter(occurrence_cibles != 0)
+# Diviser chaque valeur des colonnes par colonne "occurrence_cibles"
 trnl_freq[, 2:135] <- apply(trnl_freq[, 2:135], 1, function(x) x / trnl_freq$occurrence_cibles)
 trnl_freq <- aggregate(trnl_freq[, 1:135], by=list(trnl_freq$espece_gen), FUN=sum)
 names(trnl_freq)[names(trnl_freq) == "Group.1"] <- "espece_gen"
 trnl_freq <- trnl_freq[, !colnames(trnl_freq) %in% c("occurrence_cibles")]
-trnl_freq_long <- tidyr::pivot_longer(trnl_freq, cols = colnames(trnl_freq)[-1], names_to = "Plantes", values_to = "Valeur")
-trnl_freq_long <- merge(trnl_freq_long, freqtrnl$rang)
-
+#transformer en matrice
+#trnl_freq <- as.matrix(trnl_freq) 
+#trnl_freq <- trnl_freq[, -1]
+#write.csv(file = "output/trnl_freq.csv", trnl_freq)
+# Conversion en format long
+#trnl_freq_long <- tidyr::pivot_longer(trnl_freq, cols = colnames(trnl_freq)[-1], names_to = "Plantes", values_to = "Valeur")
+trnl_freq <- trnl_freq(trnl_freq$nom_scientifique)
+result <- left_join(trnl_freq, freqtrnl, by = "nom_scientifique")
+filter (rang == "species")
+names(trnl_freq_long)[names(trnl_freq_long) == "Plantes"] <- "nom_scientifique"
+# Fusion colonne rang du tableau freqtrnl
+#trnl_freq_long <- merge(freqtrnl, trnl_freq_long, by = "nom_scientifique")
+#trnl_freq_long <- trnl_freq_long %>%
+  filter(rang == "species")
+# Gérer les valeurs non numériques
+trnl_freq_long$Valeur[is.na(trnl_freq_long$Valeur)] <- 0  
+# Convertir en pourcentage
+trnl_freq_long <- trnl_freq_long %>% mutate(Valeur = paste0(round(Valeur * 100, 1)))
+# Grouper par "nom_scientifique" et filtrer les lignes pour lesquelles la valeur est supérieure ou égale à 5 pour toutes les espèces
+trnl_freq_long_5 <- trnl_freq_long %>%
+  group_by(nom_scientifique) %>%
+  filter(any(espece_gen %in% c("chamois", "chevreuil", "cerf", "mouton/mouflon", "bouquetin", "vache", "Non analysable") & Valeur >= 5))
+###
+require(reshape2)
+require(ggplot2)
+melted_trnl <- melt(trnl_freq)
+left_join(melted_trnl, freqtrnl, by = "nom_scientifique")
+ggplot(data = melted_trnl, aes(x = espece_gen, y = variable, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient(low = "blue", high = "red") +
+  theme_minimal() +
+  labs(x = "Espèces animal", y = "Plantes", title = "Heatmap")
+###
 #heatmap
-ggplot(trnl_freq_long, aes(x = Plantes, y = espece_gen, fill = Valeur)) +
+ggplot(data = NULL, aes(x = factor(1:ncol(trnl_freq)), y = factor(1:nrow(trnl_freq)))) +
+  geom_tile(aes(fill = trnl_freq), color = "white") +
+  scale_fill_gradient(low = "blue", high = "red") +
+  theme_minimal() +
+  labs(x = "Plantes", y = "Espèce animal", title = "Heatmap")
+
+ggplot(trnl_freq_long, aes(x = nom_scientifique, y = espece_gen , fill = as.factor(Valeur))) +
+  geom_tile() +
+  scale_fill_viridis_d(breaks = seq(0, 100, by = 2)) +  
+  labs(x = "Plantes", y = "Espèces animal", fill = "Valeur") +
+  ggtitle("Heatmap trnl") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
+
+ggplot(trnl_freq, aes(x = nom_scientifique, y = espece_gen , fill = as.factor(Valeur))) +
   geom_tile() +
   scale_fill_gradient(low = "white", high = "red") +
   labs(x = "Plantes", y = "Espèce animal", fill = "Valeur") +
   ggtitle("Heatmap") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
+
+
+###ASTE###
+#Création tableaux
+aste_freq <- tableaste_clean[, c(24:42, 2)]
+#supprimer les occurence_cible = 0
+aste_freq <- aste_freq %>% filter(occurrence_cibles != 0)
+# Diviser chaque valeur des colonnes par colonne "occurrence_cibles"
+aste_freq[, 2:19] <- apply(aste_freq[, 2:19], 1, function(x) x / aste_freq$occurrence_cibles)
+aste_freq <- aggregate(aste_freq[, 1:19], by=list(aste_freq$espece_gen), FUN=sum)
+#names(aste_freq)[names(aste_freq) == "Group.1"] <- "espece_gen"
+aste_freq <- aste_freq[, !colnames(aste_freq) %in% c("occurrence_cibles")]
+# Conversion en format long
+aste_freq_long <- tidyr::pivot_longer(aste_freq, cols = colnames(aste_freq)[-19], names_to = "Plantes", values_to = "Valeur")
+names(aste_freq_long)[names(aste_freq_long) == "Plantes"] <- "nom_scientifique"
+# Fusion colonne rang du tableau freqtrnl
+aste_freq_long <- merge(freqaste, aste_freq_long, by = "nom_scientifique")
+aste_freq_long <- aste_freq_long %>%
+  filter(rang == "species")
+# Gérer les valeurs non numériques
+aste_freq_long$Valeur[is.na(aste_freq_long$Valeur)] <- 0  
+# Convertir en pourcentage
+aste_freq_long <- aste_freq_long %>%
+  mutate(Valeur = paste0(round(Valeur * 100, 1)))
+# Grouper par "nom_scientifique" et filtrer les lignes pour lesquelles la valeur est supérieure ou égale à 5 pour toutes les espèces
+aste_freq_long_5 <- aste_freq_long %>%
+  group_by(nom_scientifique) %>%
+  filter(any(espece_gen %in% c("chamois", "chevreuil", "cerf", "mouton/mouflon", "bouquetin", "vache", "Non analysable") & Valeur >= 5))
+#heatmap
+ggplot(aste_freq_long, aes(x = nom_scientifique, y = espece_gen , fill = as.factor(Valeur))) +
+  geom_tile() +
+  scale_fill_viridis_d(breaks = seq(0, 100, by = 0.5)) +  
+  labs(x = "Plantes", y = "Espèces animal", fill = "Valeur") +
+  ggtitle("Heatmap trnl") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
+
+ggplot(aste_freq_long, aes(x = nom_scientifique, y = espece_gen , fill = as.factor(Valeur))) +
+  geom_tile() +
+  scale_fill_gradient(low = "white", high = "red") +
+  labs(x = "Plantes", y = "Espèce animal", fill = "Valeur") +
+  ggtitle("Heatmap") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
+
+
+
 
 ggplot(data.frame(especepoac), aes(x = nom_scientifique, y = cerf, fill = cerf)) +
   geom_tile(color = "black") +
