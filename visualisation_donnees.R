@@ -3,6 +3,8 @@ library(readxl)
 library(ggplot2)
 library(purrr)
 library(vegan)
+library(tidyr)
+
 
 # Chargement des donnees occurences seuil 
 table12s <- read.csv(file = "output/12s_table.csv", row.names = 1L, check.names = FALSE)
@@ -570,121 +572,144 @@ freqcype <- read.csv(file = "output/cype_frequence.csv", check.names = FALSE)
 freqpoac <- read.csv(file = "output/poac_frequence.csv", check.names = FALSE)
 ###TRNL###
 #Création tableaux
-trnl_freq <- tabletnrl_clean[, c(24:158, 2)]
+trnl_freq <- tabletnrl_clean[, c(24:158, 2)] %>%
+  filter() %>%
+  pivot_longer(-c(espece_gen, occurrence_cibles), names_to = "nom_scientifique", values_to = "valeur")
 #supprimer les occurence_cible = 0
 trnl_freq <- trnl_freq %>% filter(occurrence_cibles != 0)
-# Diviser chaque valeur des colonnes par colonne "occurrence_cibles"
-trnl_freq[, 2:135] <- apply(trnl_freq[, 2:135], 1, function(x) x / trnl_freq$occurrence_cibles)
-trnl_freq <- aggregate(trnl_freq[, 1:135], by=list(trnl_freq$espece_gen), FUN=sum)
-names(trnl_freq)[names(trnl_freq) == "Group.1"] <- "espece_gen"
-trnl_freq <- trnl_freq[, !colnames(trnl_freq) %in% c("occurrence_cibles")]
-#transformer en matrice
-#trnl_freq <- as.matrix(trnl_freq) 
-#trnl_freq <- trnl_freq[, -1]
-#write.csv(file = "output/trnl_freq.csv", trnl_freq)
-# Conversion en format long
-#trnl_freq_long <- tidyr::pivot_longer(trnl_freq, cols = colnames(trnl_freq)[-1], names_to = "Plantes", values_to = "Valeur")
-trnl_freq <- trnl_freq(trnl_freq$nom_scientifique)
-result <- left_join(trnl_freq, freqtrnl, by = "nom_scientifique")
-filter (rang == "species")
-names(trnl_freq_long)[names(trnl_freq_long) == "Plantes"] <- "nom_scientifique"
-# Fusion colonne rang du tableau freqtrnl
-#trnl_freq_long <- merge(freqtrnl, trnl_freq_long, by = "nom_scientifique")
-#trnl_freq_long <- trnl_freq_long %>%
-  filter(rang == "species")
-# Gérer les valeurs non numériques
-trnl_freq_long$Valeur[is.na(trnl_freq_long$Valeur)] <- 0  
-# Convertir en pourcentage
-trnl_freq_long <- trnl_freq_long %>% mutate(Valeur = paste0(round(Valeur * 100, 1)))
-# Grouper par "nom_scientifique" et filtrer les lignes pour lesquelles la valeur est supérieure ou égale à 5 pour toutes les espèces
-trnl_freq_long_5 <- trnl_freq_long %>%
-  group_by(nom_scientifique) %>%
-  filter(any(espece_gen %in% c("chamois", "chevreuil", "cerf", "mouton/mouflon", "bouquetin", "vache", "Non analysable") & Valeur >= 5))
-###
-require(reshape2)
-require(ggplot2)
-melted_trnl <- melt(trnl_freq)
-left_join(melted_trnl, freqtrnl, by = "nom_scientifique")
-ggplot(data = melted_trnl, aes(x = espece_gen, y = variable, fill = value)) +
-  geom_tile() +
-  scale_fill_gradient(low = "blue", high = "red") +
-  theme_minimal() +
-  labs(x = "Espèces animal", y = "Plantes", title = "Heatmap")
-###
-#heatmap
-ggplot(data = NULL, aes(x = factor(1:ncol(trnl_freq)), y = factor(1:nrow(trnl_freq)))) +
-  geom_tile(aes(fill = trnl_freq), color = "white") +
-  scale_fill_gradient(low = "blue", high = "red") +
-  theme_minimal() +
-  labs(x = "Plantes", y = "Espèce animal", title = "Heatmap")
+#joind les tableaux avec valeurs et rangs
+heatmap_trnl <- left_join(trnl_freq, freqtrnl, by = "nom_scientifique")
+#supprime colonne avec titre vide
+heatmap_trnl <- heatmap_trnl %>% select(-matches("^$"))
+##supprime chevreuil et non analysable 
+heatmap_trnl <- heatmap_trnl %>% filter(!espece_gen %in% c("chevreuil", "Non analysable"))
+#supprime les lignes =0 dans la colonnes valeur
+heatmap_trnl <- heatmap_trnl %>% filter(valeur != 0)
+#sommer par espèces les occurences des plantes
+heatmap_trnl_sum <- aggregate(cbind(occurrence_cibles, valeur) ~ espece_gen + nom_scientifique + rang, data = heatmap_trnl, FUN = sum)
+#divise valeur par occurence cible
+heatmap_trnl_sum$freq <- heatmap_trnl_sum$valeur / heatmap_trnl_sum$occurrence_cibles
+#tri les espèces <0,005
+heatmap_trnl_sum <- heatmap_trnl_sum %>%  filter(valeur >= 0.005)
+#tri par espèce 
+heatmap_trnl_espece <- subset(heatmap_trnl_sum, rang == "species")
+#tri par espèce 
+heatmap_trnl_genre <- subset(heatmap_trnl_sum, rang == "genus")
 
-ggplot(trnl_freq_long, aes(x = nom_scientifique, y = espece_gen , fill = as.factor(Valeur))) +
+ggplot(data = heatmap_trnl_espece, aes(x = espece_gen, y = nom_scientifique, fill = freq)) +
   geom_tile() +
-  scale_fill_viridis_d(breaks = seq(0, 100, by = 2)) +  
-  labs(x = "Plantes", y = "Espèces animal", fill = "Valeur") +
-  ggtitle("Heatmap trnl") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
+  scale_fill_gradient(low = "yellow", high = "red") +
+  theme_minimal() +
+  labs(x = "Espèces animal", y = "Plantes (espèce)", title = "Heatmap trnl")
 
-ggplot(trnl_freq, aes(x = nom_scientifique, y = espece_gen , fill = as.factor(Valeur))) +
+ggplot(data = heatmap_trnl_genre, aes(x = espece_gen, y = nom_scientifique, fill = freq)) +
   geom_tile() +
-  scale_fill_gradient(low = "white", high = "red") +
-  labs(x = "Plantes", y = "Espèce animal", fill = "Valeur") +
-  ggtitle("Heatmap") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
+  scale_fill_gradient(low = "yellow", high = "red") +
+  theme_minimal() +
+  labs(x = "Espèces animal", y = "Plantes (genre)", title = "Heatmap trnl")
 
 
 ###ASTE###
 #Création tableaux
-aste_freq <- tableaste_clean[, c(24:42, 2)]
+aste_freq <- tableaste_clean[, c(24:42, 2)] %>%
+  filter() %>%
+  pivot_longer(-c(espece_gen, occurrence_cibles), names_to = "nom_scientifique", values_to = "valeur")
 #supprimer les occurence_cible = 0
 aste_freq <- aste_freq %>% filter(occurrence_cibles != 0)
-# Diviser chaque valeur des colonnes par colonne "occurrence_cibles"
-aste_freq[, 2:19] <- apply(aste_freq[, 2:19], 1, function(x) x / aste_freq$occurrence_cibles)
-aste_freq <- aggregate(aste_freq[, 1:19], by=list(aste_freq$espece_gen), FUN=sum)
-#names(aste_freq)[names(aste_freq) == "Group.1"] <- "espece_gen"
-aste_freq <- aste_freq[, !colnames(aste_freq) %in% c("occurrence_cibles")]
-# Conversion en format long
-aste_freq_long <- tidyr::pivot_longer(aste_freq, cols = colnames(aste_freq)[-19], names_to = "Plantes", values_to = "Valeur")
-names(aste_freq_long)[names(aste_freq_long) == "Plantes"] <- "nom_scientifique"
-# Fusion colonne rang du tableau freqtrnl
-aste_freq_long <- merge(freqaste, aste_freq_long, by = "nom_scientifique")
-aste_freq_long <- aste_freq_long %>%
-  filter(rang == "species")
-# Gérer les valeurs non numériques
-aste_freq_long$Valeur[is.na(aste_freq_long$Valeur)] <- 0  
-# Convertir en pourcentage
-aste_freq_long <- aste_freq_long %>%
-  mutate(Valeur = paste0(round(Valeur * 100, 1)))
-# Grouper par "nom_scientifique" et filtrer les lignes pour lesquelles la valeur est supérieure ou égale à 5 pour toutes les espèces
-aste_freq_long_5 <- aste_freq_long %>%
-  group_by(nom_scientifique) %>%
-  filter(any(espece_gen %in% c("chamois", "chevreuil", "cerf", "mouton/mouflon", "bouquetin", "vache", "Non analysable") & Valeur >= 5))
-#heatmap
-ggplot(aste_freq_long, aes(x = nom_scientifique, y = espece_gen , fill = as.factor(Valeur))) +
-  geom_tile() +
-  scale_fill_viridis_d(breaks = seq(0, 100, by = 0.5)) +  
-  labs(x = "Plantes", y = "Espèces animal", fill = "Valeur") +
-  ggtitle("Heatmap trnl") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
+#joind les tableaux avec valeurs et rangs
+heatmap_aste <- left_join(aste_freq, freqtrnl, by = "nom_scientifique")
+#supprime colonne avec titre vide
+heatmap_aste <- heatmap_aste %>% select(-matches("^$"))
+#supprime chevreuil et non analysable 
+heatmap_aste <- heatmap_aste %>% filter(!espece_gen %in% c("chevreuil", "Non analysable"))
+#supprime les lignes =0 dans la colonnes valeur
+heatmap_aste <- heatmap_aste %>% filter(valeur != 0)
+#sommer par espèces les occurences des plantes
+heatmap_aste_sum <- aggregate(cbind(occurrence_cibles, valeur) ~ espece_gen + nom_scientifique + rang, data = heatmap_aste, FUN = sum)
+#divise valeur par occurence cible
+heatmap_aste_sum$freq <- heatmap_aste_sum$valeur / heatmap_aste_sum$occurrence_cibles
+#tri les espèces <0,005
+#heatmap_aste_sum <- heatmap_aste_sum %>%  filter(valeur >= 0.005)
+#tri par espèce 
+heatmap_aste_espece <- subset(heatmap_aste_sum, rang == "species")
+#tri par espèce 
+heatmap_aste_genre <- subset(heatmap_aste_sum, rang == "genus")
 
-ggplot(aste_freq_long, aes(x = nom_scientifique, y = espece_gen , fill = as.factor(Valeur))) +
+ggplot(data = heatmap_aste_espece, aes(x = espece_gen, y = nom_scientifique, fill = freq)) +
   geom_tile() +
   scale_fill_gradient(low = "white", high = "red") +
-  labs(x = "Plantes", y = "Espèce animal", fill = "Valeur") +
-  ggtitle("Heatmap") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
+  theme_minimal() +
+  labs(x = "Espèces animal", y = "Plantes (genre)", title = "Heatmap aste")
 
-
-
-
-ggplot(data.frame(especepoac), aes(x = nom_scientifique, y = cerf, fill = cerf)) +
-  geom_tile(color = "black") +
+ggplot(data = heatmap_aste_genre, aes(x = espece_gen, y = nom_scientifique, fill = freq)) +
+  geom_tile() +
   scale_fill_gradient(low = "white", high = "red") +
-  labs(x = "Plantes", y = "Espèces animal", fill = "Valeur") +
-  ggtitle("Heatmap de familypoac") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme_minimal() +
+  labs(x = "Espèces animal", y = "Plantes (espèce)", title = "Heatmap aste")
+        
+#RAREFACTION 
+#TRNL
+#Création tableaux
+trnl_rarefy <- tabletnrl_clean[, c(2, 24:158)] %>%
+  filter() %>%
+  pivot_longer(-c(espece_gen, occurrence_cibles), names_to = "nom_scientifique", values_to = "valeur") 
+trnl_rarefy <- trnl_rarefy[, -2]
+#joind les tableaux avec valeurs et rangs
+trnl_rarefy_df <- left_join(trnl_rarefy, freqtrnl, by = "nom_scientifique")
+#supprime colonne avec titre vide
+trnl_rarefy_df <- trnl_rarefy_df %>% select(-matches("^$"))
+#tri par espèce 
+trnl_rarefy_df <- subset(trnl_rarefy_df, rang == "species")
+#
+trnl_rarefy_df$valeur <- ifelse(trnl_rarefy_df$valeur > 0, 1, 0)
+#tri
+trnl_rarefy_df <- trnl_rarefy_df[, c("espece_gen", "nom_scientifique", "valeur")]
+#mettre en format large 
+trnl_rarefy_df <- pivot_wider(trnl_rarefy_df, names_from = nom_scientifique, values_from = valeur)
+rownames(trnl_rarefy_df) <- trnl_rarefy_df$espece_gen
+trnl_rarefy_df <- trnl_rarefy_df[,-1]
 
+t1 <- specaccum(trnl_rarefy_df)
+summary(t1)
+plot(t1, ylab = "Nb echantillons", xlab = "Nb nouvelles espèces")
 
+trnl_rarefy <- tabletnrl_clean[, c(2, 25:158)] %>%
+  filter() %>%
+  pivot_longer(espece_gen, names_to = "nom_scientifique", values_to = "valeur") %>%
+  as.data.frame() 
+
+trnl_rarefy <- apply(trnl_rarefy, 2, function(x) ifelse(x > 0, 1, 0))
+t1 <- specaccum(trnl_rarefy)
+summary(t1)
+plot(t1, ylab = "Nb echantillons", xlab = "Nb nouvelles espèces")
+
+"""
+rownames(trnl_rarefy) <- tabletnrl_clean$espece_gen
+
+duplicates <- table(tabletnrl_clean$espece_gen) > 1
+if (any(duplicates)) {
+  trnl_rarefy$espece_gen <- ave(trnl_rarefy$espece_gen, trnl_rarefy$espece_gen, 
+                                FUN = function(x) ifelse(duplicated(x), paste(x, seq_along(x)), x))
+}
+
+# Attribution des noms de ligne à partir de la colonne 'espece_gen'
+rownames(trnl_rarefy) <- trnl_rarefy$espece_gen
+
+min_seqs <- trnl_rarefy %>%
+  group_by(espece_gen) %>%
+  summarize(n_seqs = sum(trnl_rarefy[,c(2:135)])) %>%
+  summarize(min = min(n_seqs)) %>%
+  pull(min)
+trnl_rarefy <- apply(trnl_rarefy, 2, function(x) ifelse(x > 0, 1, 0))
+
+trnl_rarefy <- trnl_rarefy[, -1]
+
+rarefy(trnl_rarefy, min_seqs)
+
+plot(trnl_rarefy_df, min_seqs, xlab = "Observed No. of Species", ylab = "Rarefied No. of Species")
+abline(0, 1)
+rarecurve(trnl_rarefy, step = 20, sample = raremax, col = "blue", cex = 0.6)
+"""
 ###TABLEAU RECP AMORCES/ESPECES###
 chamoistnrl <- filter(taxontabletnrl, chamois > 0)
 chamoistnrl <- select(chamoistnrl, chamois, nom_scientifique)
