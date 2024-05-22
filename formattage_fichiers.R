@@ -42,7 +42,6 @@ write.csv(file = paste0("output/12s_doublons.csv"), table12s)
 
 ### Formattage tables trnl, aste, cype et poac 
 # Remplacements noms de colonnes communes a tous les fichiers
-
 fichier_list <- list(tabletrnl,
                      tablecype,
                      tablepoac,
@@ -52,7 +51,6 @@ base_nom <- c("trnl",
               "cype",
               "poac",
               "aste")
-
 
 for (i in 1:length(fichier_list)) {
   
